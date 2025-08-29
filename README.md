@@ -6,18 +6,18 @@ This package provides a ROS 2 node to forward `cmd_vel` messages to a ROS 1 syst
 
 - **Subscribes** to `/cmd_vel` on the ROS 2 network.
 - **Forwards** messages to the `/cmd_vel` topic on a ROS 1 `rosbridge_server`.
-- **On-Demand Forwarding:** Only forwards messages when they are received.
+- **Resilient Connection:** The node will continuously attempt to reconnect if the connection is lost, with status updates logged.
 - **Safety Shutdown:** Sends a zero-velocity command upon exit to prevent runaway robots.
 - **Parameterization:** The ROS 1 host and port are configurable.
 
 ## Dependency Management & Build Process
 
-This package uses a modern Python packaging approach with a `pyproject.toml` file to manage its non-ROS dependencies (`roslibpy`, `pyyaml`, etc.) within a dedicated Python virtual environment (`.venv`). This is the key to making the package self-contained and reliable.
+This package uses a dedicated Python virtual environment (`.venv`) to manage its non-ROS dependencies (`roslibpy`, `pyyaml`, etc.). This makes the package self-contained and reliable.
 
 The installation and build process is as follows:
 
 **1. Install Python Dependencies:**
-First, the Python dependencies defined in `pyproject.toml` must be installed into the package's virtual environment. This is done using `pip` in "editable" mode (`-e`), which correctly links the package to the ROS 2 workspace while installing the necessary libraries.
+First, the Python dependencies must be installed into the package's virtual environment. This is done using `pip` in "editable" mode (`-e`), which correctly links the package to the ROS 2 workspace.
 ```bash
 # From the workspace root (e.g., ~/dev/robotics/shared_ros2)
 source src/ros1_cmd_vel_bridge/.venv/bin/activate
@@ -25,49 +25,40 @@ pip install -e src/ros1_cmd_vel_bridge
 ```
 
 **2. Build the ROS 2 Workspace:**
-After the Python dependencies are correctly installed in the virtual environment, you can build the ROS 2 workspace as usual with `colcon`. `colcon` will create the necessary ROS 2 executables and launch files.
+After the Python dependencies are installed, build the ROS 2 workspace as usual with `colcon`.
 ```bash
 # From the workspace root (e.g., ~/dev/robotics/shared_ros2)
 colcon build --symlink-install --packages-select ros1_cmd_vel_bridge
 ```
-This two-step process ensures that when ROS 2 runs the node, the correct Python environment is used and all dependencies are found.
 
 ## Running the Node
 
-There are three ways to run the node, from most to least convenient:
+The recommended way to run the node is using `ros2 launch`, which now correctly handles the virtual environment.
 
-### 1. Using the `run_cmd_vel_forwarder` Alias (Recommended)
+### Using `ros2 launch` (Recommended)
 
-An alias is available in your `.zshrc` for maximum convenience. It handles sourcing all necessary environments.
+The launch file is the most robust way to run the node. It has been specifically configured to use the Python interpreter from the package's virtual environment, which solves the `ModuleNotFoundError` for dependencies like `roslibpy`.
+
+**How It Works:**
+The `cmd_vel_forwarder.launch.py` file uses a `Node` action with a `prefix`. This `prefix` forces the node's executable to be run with the Python interpreter located inside the `.venv`. This ensures that all the correct dependencies are found and used, without needing to manually source the environment.
+
 ```bash
-# Run with default parameters
-run_cmd_vel_forwarder
+# Run with default parameters (connects to localhost:9090)
+ros2 launch ros1_cmd_vel_bridge cmd_vel_forwarder.launch.py
 
 # Override the host IP
-run_cmd_vel_forwarder ros1_host:=192.168.8.4
+ros2 launch ros1_cmd_vel_bridge cmd_vel_forwarder.launch.py ros1_host:=192.168.8.4
 ```
 
-### 2. Using the `run.sh` Script
+### Using the `run.sh` Script
 
-The `run.sh` script in the package directory also handles all environment sourcing.
+The `run.sh` script in the package directory also handles all environment sourcing and is a convenient alternative.
 ```bash
 # Run with default parameters
 ./src/ros1_cmd_vel_bridge/run.sh
 
 # Override the host IP
 ./src/ros1_cmd_vel_bridge/run.sh ros1_host:=192.168.8.4
-```
-
-### 3. Using `ros2 launch` (Raw Command)
-
-This method requires you to manually source both the ROS 2 workspace and the Python virtual environment first.
-```bash
-# Source environments
-source /home/tony/dev/robotics/shared_ros2/install/setup.zsh
-source /home/tony/dev/robotics/shared_ros2/src/ros1_cmd_vel_bridge/.venv/bin/activate
-
-# Run the launch file
-ros2 launch ros1_cmd_vel_bridge cmd_vel_forwarder.launch.py ros1_host:=192.168.8.4
 ```
 
 ## Parameters

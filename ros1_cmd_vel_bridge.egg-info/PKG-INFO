@@ -1,11 +1,13 @@
 Metadata-Version: 2.4
 Name: ros1_cmd_vel_bridge
 Version: 0.0.0
+Summary: A ROS 2 node to forward cmd_vel messages to a ROS 1 system via rosbridge.
 Maintainer: tony
 Maintainer-email: antoan.bekele@gmail.com
-Requires-Python: >=3.8
-Requires-Dist: roslibpy
-Requires-Dist: pyyaml
-Requires-Dist: numpy
+License: Apache-2.0
+Requires-Dist: setuptools
+Dynamic: license
 Dynamic: maintainer
 Dynamic: maintainer-email
+Dynamic: requires-dist
+Dynamic: summary
